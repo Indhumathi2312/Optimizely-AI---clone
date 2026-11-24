@@ -1,0 +1,5 @@
+(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,516255,e=>{"use strict";var t=e.i(843476),i=e.i(152781),n=e.i(821916),o=e.i(340001);function s(e){let{rows:o,preview:s}=e,a={};for(let e of o??[])for(let n of e.columns??[])a[n.key]=(0,t.jsx)(i.default,{experienceElements:n.elements,isVisualBuilder:!0,preview:s});return(0,t.jsx)(n.default,{...e,columnContent:a})}e.s(["default",0,s],387221),e.i(387221),e.s(["VisualComparisonSectionFragment",()=>o.VisualComparisonSectionFragment,"default",0,s],516255)},418581,function(e){e.n(e.i(516255))},340001,e=>{"use strict";let t=(0,e.i(983989).graphql)(`
+  fragment VisualComparisonSectionFragment on VisualComparisonSection {
+    __typename
+  }
+`);e.s(["VisualComparisonSectionFragment",0,t])}]);

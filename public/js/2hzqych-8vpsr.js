@@ -1,0 +1,1 @@
+(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,394299,t=>{"use strict";var n=t.i(546829),a=t.i(10574);t.s(["BlankSectionFragment",()=>a.BlankSectionFragment,"blankSectionVariants",()=>n.blankSectionVariants,"default",()=>n.default])},419502,function(t){t.n(t.i(394299))}]);
