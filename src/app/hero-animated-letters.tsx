@@ -103,16 +103,15 @@ export default function HeroAnimatedLetters() {
       if (isDesktop) {
         lineStrings = ["You're free to grow"];
         // Scale dynamically so 1-line text never overflows across any desktop resolution
-        fontSize = Math.min(117, Math.max(76, (effectiveWidth - 80) / 10.5));
+        fontSize = Math.min(117, Math.max(80, (effectiveWidth - 80) / 10.5));
       } else if (isTablet) {
         lineStrings = ["You're free", "to grow"];
-        // For tablet (e.g. 768px - 1023px), comfortable generous 2-line sizing
-        fontSize = Math.min(84, Math.max(62, (effectiveWidth - 64) / 9.2));
+        // For tablet (e.g. 680px - 1023px), comfortable generous 2-line sizing
+        fontSize = Math.min(96, Math.max(72, (effectiveWidth - 48) / 8.0));
       } else {
-        // Mobile (e.g. 320px - 679px)
+        // Mobile / Small screens (< 680px): large, bold and prominent hero headline
         lineStrings = ["You're free", "to grow"];
-        // On mobile, ensure "You're free" fits with plenty of breathing room
-        fontSize = Math.min(56, Math.max(36, (effectiveWidth - 32) / 6.4));
+        fontSize = Math.min(76, Math.max(50, (effectiveWidth - 20) / 4.6));
       }
 
       const lineHeight = fontSize * 1.05;
@@ -416,7 +415,7 @@ export default function HeroAnimatedLetters() {
             style={{
               height: `${line.height.toFixed(2)}px`,
               minHeight: `${line.height.toFixed(2)}px`,
-              marginTop: lineIdx > 0 ? "4px" : "0px",
+              marginTop: lineIdx > 0 ? (line.fontSize > 65 ? "-4px" : "0px") : "0px",
             }}
           >
             {/* The line containing all character layers */}

@@ -5,6 +5,19 @@ import { useEffect, useState } from "react";
 export default function NavInteractive() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [expandedMobileSection, setExpandedMobileSection] = useState<string | null>(null);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
 
   useEffect(() => {
     // 1. Ensure all autoplay videos start playing
@@ -14,73 +27,74 @@ export default function NavInteractive() {
       v.play().catch(() => {});
     });
 
-    // 2. Wire up desktop nav dropdown triggers
-    const desktopNavButtons = document.querySelectorAll<HTMLButtonElement>(
-      '[data-site-nav="desktop"] button'
-    );
-
-    const handleButtonClick = (e: MouseEvent) => {
-      const btn = e.currentTarget as HTMLButtonElement;
-      const text = btn.textContent?.trim() || "";
-      if (text.includes("Products") || text.includes("Solutions") || text.includes("Resources")) {
-        e.preventDefault();
-        e.stopPropagation();
-        const menuName = text.includes("Products")
-          ? "Products"
-          : text.includes("Solutions")
-          ? "Solutions"
-          : "Resources";
-        setActiveDropdown((prev) => (prev === menuName ? null : menuName));
-      }
-    };
-
-    desktopNavButtons.forEach((btn) => {
-      btn.addEventListener("click", handleButtonClick);
-    });
-
-    // Close dropdown when clicking outside
+    // 2. Delegated document click handler for desktop & mobile triggers
     const handleDocumentClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('[data-site-nav="desktop"]') && !target.closest("#desktop-dropdown-menu")) {
+
+      // Check for mobile hamburger trigger click
+      const mobileBtn = target.closest<HTMLButtonElement>(
+        '[data-site-nav="mobile"] button, button[aria-label="Open menu"]'
+      );
+      if (mobileBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        setMobileMenuOpen((prev) => !prev);
+        return;
+      }
+
+      // Check for desktop nav dropdown buttons
+      const desktopBtn = target.closest<HTMLButtonElement>(
+        '[data-site-nav="desktop"] button'
+      );
+      if (desktopBtn) {
+        const text = desktopBtn.textContent?.trim() || "";
+        if (
+          text.includes("Products") ||
+          text.includes("Solutions") ||
+          text.includes("Resources")
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+          const menuName = text.includes("Products")
+            ? "Products"
+            : text.includes("Solutions")
+            ? "Solutions"
+            : "Resources";
+          setActiveDropdown((prev) => (prev === menuName ? null : menuName));
+          return;
+        }
+      }
+
+      // Click outside desktop dropdown closes it
+      if (
+        !target.closest('[data-site-nav="desktop"]') &&
+        !target.closest("#desktop-dropdown-menu")
+      ) {
         setActiveDropdown(null);
       }
     };
+
     document.addEventListener("click", handleDocumentClick);
 
-    // 3. Wire up mobile hamburger button
-    const mobileButton = document.querySelector<HTMLButtonElement>(
-      '[data-site-nav="mobile"] button[aria-label="Open menu"]'
-    );
-
-    const handleMobileClick = (e: MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setMobileMenuOpen((prev) => !prev);
-    };
-
-    if (mobileButton) {
-      mobileButton.addEventListener("click", handleMobileClick);
-    }
-
     return () => {
-      desktopNavButtons.forEach((btn) => {
-        btn.removeEventListener("click", handleButtonClick);
-      });
       document.removeEventListener("click", handleDocumentClick);
-      if (mobileButton) {
-        mobileButton.removeEventListener("click", handleMobileClick);
-      }
     };
   }, []);
+
+  const toggleMobileSection = (section: string) => {
+    setExpandedMobileSection((prev) => (prev === section ? null : section));
+  };
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+    setExpandedMobileSection(null);
+  };
 
   return (
     <>
       {/* Desktop Dropdown Menus */}
       {activeDropdown && (
-        <div
-          id="desktop-dropdown-menu"
-          className="fixed top-24 left-1/2 -translate-x-1/2 z-50 w-full max-w-4xl p-6 rounded-2xl bg-white/95 backdrop-blur-xl border border-neutral-200 shadow-2xl transition-all duration-200 ease-out"
-        >
+        <div id="desktop-dropdown-menu">
           {activeDropdown === "Products" && (
             <div className="grid grid-cols-3 gap-6">
               <div>
@@ -218,36 +232,207 @@ export default function NavInteractive() {
         </div>
       )}
 
-      {/* Mobile Drawer Menu */}
+      {/* Mobile Navigation Drawer Fullscreen Overlay */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-80 bg-[#0D3A29] text-white flex flex-col p-6 overflow-y-auto animate-in fade-in duration-200">
-          <div className="flex items-center justify-between pb-6 border-b border-white/20">
-            <span className="font-bold text-xl tracking-tight text-[#ABFF44]">Optimizely</span>
+        <div id="mobile-drawer-overlay" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+          {/* Header */}
+          <div className="mobile-drawer-header">
+            <a href="/" onClick={closeMobileMenu} className="flex items-center gap-2 text-white no-underline">
+              <span className="font-henrietta font-extrabold text-2xl tracking-tight text-[#abff44]">
+                Optimizely
+              </span>
+            </a>
+
             <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="p-2 rounded-lg bg-white/10 text-white hover:bg-white/20"
+              type="button"
+              onClick={closeMobileMenu}
+              className="mobile-drawer-close-btn"
               aria-label="Close menu"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 6L6 18M6 6l12 12" />
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
             </button>
           </div>
 
-          <div className="flex flex-col gap-6 py-8 text-xl font-medium">
-            <a href="/products" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#ABFF44]">Products</a>
-            <a href="/solutions" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#ABFF44]">Solutions</a>
-            <a href="/resources" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#ABFF44]">Resources</a>
-            <a href="/plans" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#ABFF44]">Plans</a>
-            <a href="/developers" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#ABFF44]">Developers</a>
-            <a href="/partners" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#ABFF44]">Partners</a>
-            <a href="https://home.optimizely.com/" className="hover:text-[#ABFF44]">Login</a>
+          {/* Navigation Links with smooth accordions */}
+          <div className="mobile-drawer-links">
+            {/* Products */}
+            <div className="mobile-drawer-item">
+              <button
+                type="button"
+                onClick={() => toggleMobileSection("products")}
+                className="mobile-drawer-link-btn"
+                aria-expanded={expandedMobileSection === "products"}
+              >
+                <span>Products</span>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{
+                    transform: expandedMobileSection === "products" ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 0.2s ease",
+                  }}
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              {expandedMobileSection === "products" && (
+                <div className="mobile-drawer-sublist">
+                  <a href="/products/content-management/" onClick={closeMobileMenu} className="mobile-drawer-sublink">
+                    <div className="mobile-drawer-sublink-title">Agentic CMS</div>
+                    <div className="mobile-drawer-sublink-desc">Next-gen AI content authoring</div>
+                  </a>
+                  <a href="/products/experimentation/" onClick={closeMobileMenu} className="mobile-drawer-sublink">
+                    <div className="mobile-drawer-sublink-title">Agentic Experimentation</div>
+                    <div className="mobile-drawer-sublink-desc">A/B testing & feature rollouts</div>
+                  </a>
+                  <a href="/products/ai/" onClick={closeMobileMenu} className="mobile-drawer-sublink">
+                    <div className="mobile-drawer-sublink-title">Agent Platform</div>
+                    <div className="mobile-drawer-sublink-desc">AI workflows & agent automation</div>
+                  </a>
+                  <a href="/products/content-management/" onClick={closeMobileMenu} className="mobile-drawer-sublink">
+                    <div className="mobile-drawer-sublink-title">Content Marketing Platform</div>
+                    <div className="mobile-drawer-sublink-desc">Plan & campaign collaboration</div>
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Solutions */}
+            <div className="mobile-drawer-item">
+              <button
+                type="button"
+                onClick={() => toggleMobileSection("solutions")}
+                className="mobile-drawer-link-btn"
+                aria-expanded={expandedMobileSection === "solutions"}
+              >
+                <span>Solutions</span>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{
+                    transform: expandedMobileSection === "solutions" ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 0.2s ease",
+                  }}
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              {expandedMobileSection === "solutions" && (
+                <div className="mobile-drawer-sublist">
+                  <a href="#" onClick={closeMobileMenu} className="mobile-drawer-sublink">
+                    <div className="mobile-drawer-sublink-title">For Marketers</div>
+                    <div className="mobile-drawer-sublink-desc">Prove impact & scale campaigns</div>
+                  </a>
+                  <a href="#" onClick={closeMobileMenu} className="mobile-drawer-sublink">
+                    <div className="mobile-drawer-sublink-title">For Product Teams</div>
+                    <div className="mobile-drawer-sublink-desc">Ship validated features faster</div>
+                  </a>
+                  <a href="#" onClick={closeMobileMenu} className="mobile-drawer-sublink">
+                    <div className="mobile-drawer-sublink-title">For Developers</div>
+                    <div className="mobile-drawer-sublink-desc">Ultra-fast APIs, SDKs & flags</div>
+                  </a>
+                  <a href="#" onClick={closeMobileMenu} className="mobile-drawer-sublink">
+                    <div className="mobile-drawer-sublink-title">For Enterprise</div>
+                    <div className="mobile-drawer-sublink-desc">Governance, security & global scale</div>
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Resources */}
+            <div className="mobile-drawer-item">
+              <button
+                type="button"
+                onClick={() => toggleMobileSection("resources")}
+                className="mobile-drawer-link-btn"
+                aria-expanded={expandedMobileSection === "resources"}
+              >
+                <span>Resources</span>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{
+                    transform: expandedMobileSection === "resources" ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 0.2s ease",
+                  }}
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              {expandedMobileSection === "resources" && (
+                <div className="mobile-drawer-sublist">
+                  <a href="/developers" onClick={closeMobileMenu} className="mobile-drawer-sublink">
+                    <div className="mobile-drawer-sublink-title">Developer Docs & APIs</div>
+                    <div className="mobile-drawer-sublink-desc">Quickstarts, SDKs & guides</div>
+                  </a>
+                  <a href="#" onClick={closeMobileMenu} className="mobile-drawer-sublink">
+                    <div className="mobile-drawer-sublink-title">Customer Stories</div>
+                    <div className="mobile-drawer-sublink-desc">See how leading brands win</div>
+                  </a>
+                  <a href="#" onClick={closeMobileMenu} className="mobile-drawer-sublink">
+                    <div className="mobile-drawer-sublink-title">Blog & Research</div>
+                    <div className="mobile-drawer-sublink-desc">Strategy & experimentation insights</div>
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Plans */}
+            <div className="mobile-drawer-item">
+              <a href="/plans" onClick={closeMobileMenu} className="mobile-drawer-link-btn">
+                <span>Plans</span>
+              </a>
+            </div>
+
+            {/* Developers */}
+            <div className="mobile-drawer-item">
+              <a href="/developers" onClick={closeMobileMenu} className="mobile-drawer-link-btn">
+                <span>Developers</span>
+              </a>
+            </div>
+
+            {/* Partners */}
+            <div className="mobile-drawer-item">
+              <a href="/partners" onClick={closeMobileMenu} className="mobile-drawer-link-btn">
+                <span>Partners</span>
+              </a>
+            </div>
+
+            {/* Login */}
+            <div className="mobile-drawer-item">
+              <a href="https://home.optimizely.com/" onClick={closeMobileMenu} className="mobile-drawer-link-btn">
+                <span>Login</span>
+              </a>
+            </div>
           </div>
 
-          <div className="mt-auto pt-6 border-t border-white/20">
+          {/* Bottom Get Started Button */}
+          <div className="mobile-drawer-cta-wrapper">
             <a
               href="/get-started"
-              className="flex items-center justify-center w-full py-4 rounded-xl bg-[#ABFF44] text-[#0D3A29] font-bold text-lg hover:bg-[#9de83a] transition-colors"
+              onClick={closeMobileMenu}
+              className="mobile-drawer-cta-btn"
             >
               Get started
             </a>
